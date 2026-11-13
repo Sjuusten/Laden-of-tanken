@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LaadCheck">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<meta name="robots" content="noindex,nofollow">
+<title>LaadCheck</title>
+<link rel="apple-touch-icon" id="touchIcon" href="">
+<style>
+:root{
+  --bg:#f2f2f7; --card:rgba(255,255,255,.66); --stroke:rgba(255,255,255,.75);
+  --text:#101014; --sub:#6c6c74; --sep:rgba(60,60,67,.16); --field:rgba(120,120,128,.12);
+  --accent:#0a84ff; --good:#30c15a; --warn:#ff9f0a; --bad:#ff453a;
+  --c-fuel:#8e8e93; --c-anwb:#0a84ff; --c-shell:#ff9f0a; --c-home:#30d158;
+  --shadow:0 10px 34px rgba(30,30,60,.08);
+  --blob1:rgba(10,132,255,.28); --blob2:rgba(48,209,88,.20); --blob3:rgba(255,159,10,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#000; --card:rgba(44,44,50,.58); --stroke:rgba(255,255,255,.11);
+    --text:#f5f5f7; --sub:#9c9ca6; --sep:rgba(255,255,255,.13); --field:rgba(120,120,128,.24);
+    --shadow:0 10px 34px rgba(0,0,0,.45);
+    --blob1:rgba(10,132,255,.30); --blob2:rgba(48,209,88,.16); --blob3:rgba(255,159,10,.16);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;min-height:100vh;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(60% 40% at 10% 0%,var(--blob1),transparent 70%),
+    radial-gradient(50% 40% at 100% 30%,var(--blob2),transparent 70%),
+    radial-gradient(60% 40% at 0% 100%,var(--blob3),transparent 70%);
+}
+.app{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 110px)}
+.view{display:none}.view.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:6px 4px 2px;font-weight:800}
+.subtitle{margin:0 4px 18px;color:var(--sub);font-size:15px}
+.card{
+  background:var(--card);border:1px solid var(--stroke);border-radius:24px;
+  -webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);
+  box-shadow:var(--shadow);padding:18px;margin-bottom:14px;
+}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);font-weight:600;margin:0 0 12px}
+.banner{
+  display:flex;gap:10px;align-items:center;justify-content:space-between;
+  background:rgba(255,159,10,.16);border:1px solid rgba(255,159,10,.4);color:var(--text);
+  border-radius:18px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.35;
+}
+.banner button{flex:none;border:0;background:var(--warn);color:#fff;font-weight:600;border-radius:999px;padding:8px 14px;font-size:14px}
+
+/* hero */
+.hero{border-radius:28px;padding:22px 20px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.18)}
+.hero.charge{background:linear-gradient(135deg,#34d36a,#0c9c78)}
+.hero.fuel{background:linear-gradient(135deg,#ffb020,#ff6a1a)}
+.hero::after{content:"";position:absolute;right:-40px;top:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.18);filter:blur(6px)}
+.hero .eyebrow{font-size:13px;font-weight:600;opacity:.88}
+.hero .title{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:4px 0 12px}
+.hero .big{font-size:46px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.hero .big small{display:block;font-size:15px;font-weight:600;letter-spacing:0;opacity:.92;margin-top:6px;line-height:1.3}
+.hero .foot{margin-top:14px;font-size:14px;opacity:.92;line-height:1.4;position:relative;z-index:1}
+
+/* slider */
+.sess-top{display:flex;justify-content:space-between;align-items:baseline}
+.sess-val{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.sess-val small{font-size:16px;font-weight:600;color:var(--sub);margin-left:3px}
+.sess-km{color:var(--sub);font-size:14px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:10px 0 4px}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;background:linear-gradient(to right,var(--accent) var(--pct,50%),var(--field) var(--pct,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;margin-top:-11px;box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 .5px rgba(0,0,0,.08)}
+.chips{display:flex;gap:8px;margin-top:8px}
+.chips button{flex:1;border:0;background:var(--field);color:var(--text);font-size:15px;font-weight:600;padding:9px 0;border-radius:12px}
+.chips button.on{background:var(--accent);color:#fff}
+
+/* options */
+.opt{padding:12px 0;border-top:1px solid var(--sep)}
+.opt:first-of-type{border-top:0;padding-top:0}
+.opt-top{display:flex;align-items:center;gap:8px}
+.dot{width:12px;height:12px;border-radius:50%;flex:none;background:var(--c)}
+.c-fuel{--c:var(--c-fuel)}.c-anwb{--c:var(--c-anwb)}.c-shell{--c:var(--c-shell)}.c-home{--c:var(--c-home)}
+.opt-name{font-weight:700;font-size:17px}
+.badge{background:rgba(48,193,90,.18);color:#1f9a46;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em}
+@media (prefers-color-scheme:dark){.badge{color:#5ddb85}}
+.opt-val{margin-left:auto;font-size:20px;font-weight:800;letter-spacing:-.01em}
+.opt-val small{font-size:12px;font-weight:600;color:var(--sub)}
+.bar{height:8px;border-radius:999px;background:var(--field);margin:9px 0 6px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px;background:var(--c);transition:width .35s ease}
+.opt-sub{font-size:13px;color:var(--sub);line-height:1.35}
+
+/* chart */
+svg.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--sub);font-size:10px;font-family:inherit}
+.chart .grid{stroke:var(--sep);stroke-width:1}
+.chart .ln{fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:13px;color:var(--sub)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .dot{width:9px;height:9px}
+.hint{font-size:13px;color:var(--sub);margin:10px 2px 0;line-height:1.4}
+
+/* breakeven */
+.be{padding:14px 0;border-top:1px solid var(--sep)}
+.be:first-of-type{border-top:0;padding-top:0}
+.be-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px}
+.be-big{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
+.be-sub{font-size:14px;color:var(--sub);line-height:1.4;margin-bottom:8px}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:6px 0;border-top:1px dashed var(--sep)}
+.kv span{color:var(--sub)}.kv b{white-space:nowrap}
+
+/* settings */
+.group-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);font-weight:600;margin:20px 8px 7px}
+.group{background:var(--card);border:1px solid var(--stroke);border-radius:20px;overflow:hidden;
+  -webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);box-shadow:var(--shadow)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid var(--sep);min-height:52px}
+.row:first-child{border-top:0}
+.row label{font-size:16px;flex:1;line-height:1.25}
+.row .inp{display:flex;align-items:center;gap:6px}
+.row input[type=text]{width:84px;text-align:right;font-size:17px;font-weight:600;color:var(--accent);background:var(--field);border:1.5px solid transparent;border-radius:10px;padding:8px 10px;font-family:inherit;outline:none}
+.row input[type=text]:focus{border-color:var(--accent)}
+.row input.bad{border-color:var(--bad);color:var(--bad)}
+.unit{font-size:14px;color:var(--sub);min-width:54px}
+.foot{font-size:13px;color:var(--sub);margin:7px 10px 0;line-height:1.4}
+.switch{position:relative;width:51px;height:31px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:var(--field);border-radius:999px;transition:.2s}
+.switch span::before{content:"";position:absolute;left:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:.2s}
+.switch input:checked+span{background:var(--good)}
+.switch input:checked+span::before{transform:translateX(20px)}
+.btn-reset{width:100%;margin-top:22px;border:0;background:var(--card);border:1px solid var(--stroke);color:var(--bad);font-weight:600;font-size:16px;padding:14px;border-radius:18px}
+
+.card.key{border-color:rgba(10,132,255,.5);box-shadow:0 10px 34px rgba(10,132,255,.16)}
+.card.key .be-big{font-size:30px}
+.tf{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;padding:12px 0;border-top:1px solid var(--sep)}
+.tf:first-of-type{border-top:0;padding-top:0}
+.tf-h{grid-column:1/3;display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px}
+.tf label{font-size:12px;color:var(--sub);display:flex;flex-direction:column;gap:4px;font-weight:600}
+.tf input{width:100%;font-size:18px;font-weight:600;color:var(--accent);background:var(--field);border:1.5px solid transparent;border-radius:12px;padding:10px 12px;font-family:inherit;outline:none}
+.tf input:focus{border-color:var(--accent)}
+.tf input.bad{border-color:var(--bad);color:var(--bad)}
+
+/* tab bar */
+.tabbar{
+  position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 10px);max-width:488px;margin:0 auto;z-index:10;
+  display:flex;padding:6px;border-radius:999px;background:var(--card);border:1px solid var(--stroke);
+  -webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);box-shadow:0 12px 36px rgba(0,0,0,.18);
+}
+.tabbar button{flex:1;border:0;background:transparent;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 7px;border-radius:999px;font-size:11px;font-weight:600;font-family:inherit}
+.tabbar button svg{width:24px;height:24px}
+.tabbar button.active{color:var(--accent);background:var(--field)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <section id="view-compare" class="view active">
+    <h1>Laden of tanken?</h1>
+    <p class="subtitle">BYD Atto 2 DM-i · wat is nu voordeliger</p>
+    <div id="banner"></div>
+    <div id="hero"></div>
+
+    <div class="card key"><h2>Omslagpunt per laadpas</h2><div id="breakeven"></div></div>
+
+    <div class="card">
+      <h2>Laadbeurt</h2>
+      <div class="sess-top">
+        <div class="sess-val"><span id="sessVal">10</span><small>kWh</small></div>
+        <div class="sess-km" id="sessKm"></div>
+      </div>
+      <input type="range" id="sess" min="1" max="20" step="0.5" value="10" aria-label="kWh per laadbeurt">
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="card" id="tariffs">
+      <h2>Tarief van deze laadpaal</h2>
+      <div class="tf c-anwb">
+        <div class="tf-h"><span class="dot"></span>ANWB</div>
+        <label>€ per kWh<input type="text" inputmode="decimal" autocomplete="off" data-path="anwb.kwh" id="tf-anwb.kwh"></label>
+        <label>Starttarief (€)<input type="text" inputmode="decimal" autocomplete="off" data-path="anwb.start" id="tf-anwb.start"></label>
+      </div>
+      <div class="tf c-shell">
+        <div class="tf-h"><span class="dot"></span>Shell</div>
+        <label>€ per kWh<input type="text" inputmode="decimal" autocomplete="off" data-path="shell.kwh" id="tf-shell.kwh"></label>
+        <label>Starttarief (€)<input type="text" inputmode="decimal" autocomplete="off" data-path="shell.start" id="tf-shell.start"></label>
+      </div>
+      <p class="hint">Tarieven verschillen per paal. Pas ze hier aan voordat je laadt; het omslagpunt hierboven rekent direct mee.</p>
+    </div>
+
+    <div class="card"><h2>Kosten per 100 km</h2><div id="options"></div></div>
+
+    <div class="card">
+      <h2>Wanneer wint laden?</h2>
+      <div id="chart"></div>
+      <div class="legend" id="legend"></div>
+      <p class="hint">Kosten per 100 km tegen de grootte van je laadbeurt. Het starttarief verdeelt zich over meer kWh, dus een grotere laadbeurt is goedkoper per km.</p>
+    </div>
+  </section>
+
+  <section id="view-settings" class="view">
+    <h1>Instellingen</h1>
+    <p class="subtitle">Alles wat je hier wijzigt wordt direct doorgerekend.</p>
+    <div id="settings"></div>
+    <button class="btn-reset" id="reset">Standaardwaarden herstellen</button>
+  </section>
+
+</div>
+
+<nav class="tabbar">
+  <button id="tab-compare" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg>
+    Vergelijk
+  </button>
+  <button id="tab-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>
+    Instellingen
+  </button>
+</nav>
+
+<script>
+(function(){
+'use strict';
+var KEY='laadcheck.v1';
+var DEFAULTS={
+  fuelPrice:2.10, fuelUpdated:null, genCons:5.5,
+  elecCons:16.3, loss:10, battery:18.3,
+  anwb:{kwh:0.55,start:0.50,extra:0},
+  shell:{kwh:0.60,start:0.35,extra:0},
+  home:{on:false,kwh:0.30},
+  session:10, touched:false
+};
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function merge(t,s){for(var k in s){if(s[k]&&typeof s[k]==='object'&&!Array.isArray(s[k])&&t[k]&&typeof t[k]==='object'){merge(t[k],s[k]);}else{t[k]=s[k];}}return t;}
+function load(){try{var r=JSON.parse(localStorage.getItem(KEY));return merge(clone(DEFAULTS),r||{});}catch(e){return clone(DEFAULTS);}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+var S=load();
+var $=function(id){return document.getElementById(id);};
+
+function num(n,d){if(d===undefined)d=1;return n.toLocaleString('nl-NL',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function eur(n,d){if(d===undefined)d=2;return '€\u00A0'+num(n,d);}
+function parseNum(v){return parseFloat(String(v).replace(',','.').replace(/[^0-9.\-]/g,''));}
+function txt(n){return String(Math.round(n*1000)/1000).replace('.',',');}
+function getPath(o,p){return p.split('.').reduce(function(a,k){return a[k];},o);}
+function setPath(o,p,v){var a=p.split('.');var last=a.pop();var t=a.reduce(function(x,k){return x[k];},o);t[last]=v;}
+
+/* ---------- model ---------- */
+function model(s){
+  var keep=1-s.loss/100;
+  var g=(s.elecCons/100)/keep;            // kWh aan de paal per km
+  var fuelKm=s.genCons/100*s.fuelPrice;   // € per km op benzine
+  var maxE=Math.max(2,s.battery/keep);    // max kWh aan de paal per laadbeurt
+  return {g:g,fuelKm:fuelKm,maxE:maxE,keep:keep};
+}
+function chargePerKm(m,p,E){var fixed=(p.start||0)+(p.extra||0);return m.g*(p.kwh+fixed/E);}
+function breakeven(m,p){
+  var fixed=(p.start||0)+(p.extra||0);
+  var pEq=m.fuelKm/m.g;                   // max all-in €/kWh
+  if(p.kwh>=pEq) return {type:'never',pEq:pEq};
+  if(fixed<=0) return {type:'always',pEq:pEq};
+  var E=fixed/(pEq-p.kwh);
+  if(E>m.maxE) return {type:'toobig',E:E,pEq:pEq};
+  return {type:'ok',E:E,km:E/m.g,pEq:pEq};
+}
+
+/* ---------- compare view ---------- */
+function renderCompare(){
+  var s=S,m=model(s);
+  var maxSlider=Math.floor(m.maxE*2)/2;
+  var slider=$('sess');
+  if(String(slider.max)!==String(maxSlider)) slider.max=maxSlider;
+  if(s.session>maxSlider) s.session=maxSlider;
+  if(s.session<1) s.session=1;
+  slider.value=s.session;
+  var E=s.session, kmS=E/m.g;
+  $('sessVal').textContent=num(E,1);
+  var tfs=document.querySelectorAll('#tariffs input[data-path]');
+  for(var ti=0;ti<tfs.length;ti++){
+    if(document.activeElement!==tfs[ti]){tfs[ti].value=txt(getPath(S,tfs[ti].dataset.path));tfs[ti].classList.remove('bad');}
+  }
+  $('sessKm').textContent='≈ '+num(kmS,0)+' km elektrisch';
+  slider.style.setProperty('--pct',((E-slider.min)/(slider.max-slider.min)*100)+'%');
+  var chipVals=[5,10,15].filter(function(v){return v<maxSlider;});
+  $('chips').innerHTML=chipVals.map(function(v){return '<button data-v="'+v+'" class="'+(Math.abs(E-v)<.01?'on':'')+'">'+v+'</button>';}).join('')
+    +'<button data-v="'+maxSlider+'" class="'+(Math.abs(E-maxSlider)<.01?'on':'')+'">Max</button>';
+
+  $('banner').innerHTML=s.touched?'':'<div class="banner"><span>Dit zijn voorbeeldwaarden. Vul eerst je eigen tarieven en brandstofprijs in.</span><button id="toSet">Instellen</button></div>';
+
+  var opts=[{id:'fuel',name:'Benzine',perKm:m.fuelKm,
+    sub:num(s.genCons,1)+' L/100 km × '+eur(s.fuelPrice)+' per liter'}];
+  [['anwb','ANWB'],['shell','Shell']].forEach(function(a){
+    var p=s[a[0]],fixed=p.start+p.extra,sc=p.kwh*E+fixed;
+    opts.push({id:a[0],name:a[1],perKm:m.g*(p.kwh+fixed/E),charge:true,
+      sub:eur(sc)+' voor '+num(E,1)+' kWh · '+eur(sc/E)+' per kWh incl. start'});
+  });
+  if(s.home.on){
+    opts.push({id:'home',name:'Thuis laden',perKm:m.g*s.home.kwh,charge:true,
+      sub:eur(s.home.kwh*E)+' voor '+num(E,1)+' kWh · '+eur(s.home.kwh)+' per kWh'});
+  }
+  var best=opts.reduce(function(a,b){return b.perKm<a.perKm?b:a;});
+  var charges=opts.filter(function(o){return o.charge;});
+  var cheapestCharge=charges.reduce(function(a,b){return b.perKm<a.perKm?b:a;});
+  var maxPer=Math.max.apply(null,opts.map(function(o){return o.perKm;}));
+
+  var hero;
+  if(best.charge){
+    var d=m.fuelKm-best.perKm;
+    hero='<div class="hero charge"><div class="eyebrow">Voordeligste optie · '+num(E,1)+' kWh per laadbeurt</div>'
+      +'<div class="title">Laden · '+best.name+'</div>'
+      +'<div class="big">'+eur(d*100)+'<small>goedkoper per 100 km dan benzine</small></div>'
+      +'<div class="foot">≈ '+eur(d*kmS)+' voordeel per laadbeurt van '+num(kmS,0)+' km elektrisch.</div></div>';
+  }else{
+    var d2=cheapestCharge.perKm-m.fuelKm;
+    var foot='Beste laadoptie is '+cheapestCharge.name+'.';
+    var cp=s[cheapestCharge.id];
+    if(cp&&cheapestCharge.id!=='home'){
+      var be=breakeven(m,cp);
+      if(be.type==='ok') foot+=' Laden wint vanaf '+num(be.E,1)+' kWh per laadbeurt.';
+      else if(be.type==='never') foot+=' Het tarief per kWh is te hoog om ooit te winnen van benzine.';
+      else if(be.type==='toobig') foot+=' Je zou meer moeten laden dan de accu aankan.';
+    }
+    hero='<div class="hero fuel"><div class="eyebrow">Voordeligste optie · '+num(E,1)+' kWh per laadbeurt</div>'
+      +'<div class="title">Rij op benzine</div>'
+      +'<div class="big">'+eur(d2*100)+'<small>goedkoper per 100 km dan laden via '+cheapestCharge.name+'</small></div>'
+      +'<div class="foot">'+foot+'</div></div>';
+  }
+  $('hero').innerHTML=hero;
+
+  $('options').innerHTML=opts.map(function(o){
+    return '<div class="opt c-'+o.id+'"><div class="opt-top"><span class="dot"></span><span class="opt-name">'+o.name+'</span>'
+      +(o===best?'<span class="badge">Voordeligst</span>':'')
+      +'<span class="opt-val">'+eur(o.perKm*100)+' <small>/100 km</small></span></div>'
+      +'<div class="bar"><i style="width:'+Math.max(4,o.perKm/maxPer*100)+'%"></i></div>'
+      +'<div class="opt-sub">'+o.sub+'</div></div>';
+  }).join('');
+
+  renderChart(s,m,E,opts);
+
+  var html='';
+  var passes=[['anwb','ANWB'],['shell','Shell']];
+  if(s.home.on) passes.push(['home','Thuis laden']);
+  passes.forEach(function(a){
+    var p=a[0]==='home'?{kwh:s.home.kwh,start:0,extra:0}:s[a[0]];
+    var be=breakeven(m,p),fixed=p.start+p.extra;
+    var big,sub;
+    if(be.type==='ok'){big='Vanaf '+num(be.E,1)+' kWh';sub='per laadbeurt wint laden van benzine (≈ '+num(be.km,0)+' km elektrisch rijden).';}
+    else if(be.type==='always'){big='Altijd voordeliger';sub='Zonder starttarief wint laden bij elke laadbeurt.';}
+    else if(be.type==='toobig'){big='Niet in één lading';sub='Je zou '+num(be.E,1)+' kWh moeten laden om te winnen, meer dan de accu aankan (max '+num(m.maxE,1)+' kWh).';}
+    else{big='Nooit voordeliger';sub='Het tarief van '+eur(p.kwh)+' per kWh ligt boven het omslagtarief van '+eur(be.pEq)+' per kWh.';}
+    var maxPrice=be.pEq-fixed/E;
+    var fuelEq=chargePerKm(m,p,E)*100/s.genCons;
+    html+='<div class="be c-'+a[0]+'"><div class="be-h"><span class="dot"></span>'+a[1]+'</div>'
+      +'<div class="be-big">'+big+'</div><div class="be-sub">'+sub+'</div>'
+      +'<div class="kv"><span>Omslagtarief per kWh (alles meegerekend)</span><b>'+eur(be.pEq)+'</b></div>'
+      +'<div class="kv"><span>Max. tarief per kWh bij '+num(E,1)+' kWh</span><b>'+(maxPrice>0?eur(maxPrice):'–')+'</b></div>'
+      +'<div class="kv"><span>Laden wint zodra benzine duurder is dan</span><b>'+eur(fuelEq)+' /L</b></div></div>';
+  });
+  $('breakeven').innerHTML=html;
+}
+
+function renderChart(s,m,E,opts){
+  var W=340,H=210,L=42,R=10,T=10,B=28;
+  var x0=1,x1=m.maxE;
+  var series=[{id:'fuel',f:function(){return m.fuelKm*100;}}];
+  [['anwb'],['shell']].forEach(function(a){var p=s[a[0]];series.push({id:a[0],f:function(e){return chargePerKm(m,p,e)*100;}});});
+  if(s.home.on) series.push({id:'home',f:function(){return m.g*s.home.kwh*100;}});
+  var fuel100=m.fuelKm*100;
+  var ends=series.map(function(se){return se.f(x1);});
+  var ymin=Math.max(0,Math.floor(Math.min.apply(null,[fuel100].concat(ends))*0.8));
+  var ymax=Math.ceil(Math.max.apply(null,[fuel100].concat(ends))*1.35);
+  if(ymax<=ymin) ymax=ymin+1;
+  var X=function(e){return L+(e-x0)/(x1-x0)*(W-L-R);};
+  var Y=function(v){return T+(1-(v-ymin)/(ymax-ymin))*(H-T-B);};
+  var out='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Kosten per 100 km tegen kWh per laadbeurt">';
+  out+='<defs><clipPath id="clip"><rect x="'+L+'" y="'+T+'" width="'+(W-L-R)+'" height="'+(H-T-B)+'"/></clipPath></defs>';
+  for(var i=0;i<=4;i++){
+    var v=ymin+i*(ymax-ymin)/4,y=Y(v);
+    out+='<line class="grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(L-6)+'" y="'+(y+3)+'" text-anchor="end">€'+Math.round(v)+'</text>';
+  }
+  var ticks=[];for(var t=5;t<x1;t+=5)ticks.push(t);
+  ticks.forEach(function(t){out+='<text x="'+X(t)+'" y="'+(H-8)+'" text-anchor="middle">'+t+'</text>';});
+  out+='<text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end">kWh</text>';
+  out+='<g clip-path="url(#clip)">';
+  series.forEach(function(se){
+    var d='',N=70;
+    for(var k=0;k<=N;k++){var e=x0+(x1-x0)*k/N;d+=(k?'L':'M')+X(e).toFixed(1)+' '+Y(se.f(e)).toFixed(1);}
+    out+='<path class="ln" d="'+d+'" stroke="var(--c-'+se.id+')"'+(se.id==='fuel'?' stroke-dasharray="6 5"':'')+'/>';
+  });
+  out+='</g>';
+  out+='<line x1="'+X(E)+'" x2="'+X(E)+'" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--text)" stroke-opacity=".35" stroke-dasharray="3 4"/>';
+  series.forEach(function(se){
+    var v=se.f(E);
+    if(v>=ymin&&v<=ymax) out+='<circle cx="'+X(E)+'" cy="'+Y(v)+'" r="5" fill="var(--c-'+se.id+')" stroke="#fff" stroke-width="2"/>';
+  });
+  out+='</svg>';
+  $('chart').innerHTML=out;
+  var names={fuel:'Benzine',anwb:'ANWB',shell:'Shell',home:'Thuis'};
+  $('legend').innerHTML=series.map(function(se){return '<span class="c-'+se.id+'"><i class="dot"></i>'+names[se.id]+'</span>';}).join('')+'<span>┆ jouw laadbeurt</span>';
+}
+
+/* ---------- settings view ---------- */
+function row(label,path,unit){
+  return '<div class="row"><label for="f-'+path+'">'+label+'</label><div class="inp"><input type="text" inputmode="decimal" autocomplete="off" id="f-'+path+'" data-path="'+path+'" value="'+txt(getPath(S,path))+'"><span class="unit">'+unit+'</span></div></div>';
+}
+function fuelDate(){
+  if(!S.fuelUpdated) return 'Nog niet bijgewerkt. Pas de literprijs aan zodra je getankt hebt.';
+  return 'Laatst bijgewerkt op '+new Date(S.fuelUpdated).toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})+'.';
+}
+function renderSettings(){
+  var h='';
+  h+='<div class="group-title">Benzine</div><div class="group">'
+    +row('Literprijs (inkoop)','fuelPrice','€ / L')
+    +row('Verbruik op benzine','genCons','L / 100 km')+'</div>'
+    +'<p class="foot" id="fuelDate">'+fuelDate()+' Het verbruik is wat de auto verbruikt als hij op de generator rijdt. Dat is niet je gemiddelde (0,9 L), want dat is een mix met elektrisch rijden.</p>';
+  h+='<div class="group-title">Auto</div><div class="group">'
+    +row('Stroomverbruik','elecCons','kWh / 100 km')
+    +row('Laadverlies','loss','%')
+    +row('Accucapaciteit','battery','kWh')+'</div>'
+    +'<p class="foot">Het stroomverbruik is wat de auto zelf aangeeft. Het laadverlies (warmte in lader en accu) komt daar nog bovenop; rond 10% is gebruikelijk.</p>';
+  h+='<div class="group-title">ANWB</div><div class="group">'
+    +row('Tarief per kWh','anwb.kwh','€ / kWh')
+    +row('Starttarief','anwb.start','€ / sessie')
+    +row('Overige kosten','anwb.extra','€ / sessie')+'</div>';
+  h+='<div class="group-title">Shell</div><div class="group">'
+    +row('Tarief per kWh','shell.kwh','€ / kWh')
+    +row('Starttarief','shell.start','€ / sessie')
+    +row('Overige kosten','shell.extra','€ / sessie')+'</div>'
+    +'<p class="foot">Overige kosten zijn bijvoorbeeld parkeren of een blokkeertarief. Tarieven verschillen per laadpaal en netwerk, controleer ze in de laadpas-app.</p>';
+  h+='<div class="group-title">Thuis laden (optioneel)</div><div class="group">'
+    +'<div class="row"><label for="f-home.on">Toon thuis laden als referentie</label><label class="switch"><input type="checkbox" id="f-home.on" data-toggle="home.on"'+(S.home.on?' checked':'')+'><span></span></label></div>'
+    +row('Tarief per kWh','home.kwh','€ / kWh')+'</div>';
+  $('settings').innerHTML=h;
+}
+var POS={fuelPrice:1,genCons:1,elecCons:1,battery:1};
+function applyField(el){
+  var path=el.dataset&&el.dataset.path;
+  if(!path) return false;
+  var v=parseNum(el.value);
+  var ok=isFinite(v)&&v>=0&&(!POS[path]||v>0)&&(path!=='loss'||v<=50)&&v<=1000;
+  if(!ok){el.classList.add('bad');return false;}
+  el.classList.remove('bad');
+  var old=getPath(S,path);
+  setPath(S,path,v);
+  if(path==='fuelPrice'&&v!==old){S.fuelUpdated=new Date().toISOString();$('fuelDate').textContent=fuelDate()+' Het verbruik is wat de auto verbruikt als hij op de generator rijdt. Dat is niet je gemiddelde (0,9 L), want dat is een mix met elektrisch rijden.';}
+  S.touched=true;save();
+  return true;
+}
+$('settings').addEventListener('input',function(e){applyField(e.target);});
+$('tariffs').addEventListener('input',function(e){if(applyField(e.target)) renderCompare();});
+$('settings').addEventListener('change',function(e){
+  var el=e.target;
+  if(el.dataset&&el.dataset.toggle){setPath(S,el.dataset.toggle,el.checked);S.touched=true;save();}
+});
+$('reset').addEventListener('click',function(){
+  if(confirm('Alle instellingen terugzetten naar de standaardwaarden?')){S=clone(DEFAULTS);save();renderSettings();}
+});
+
+/* ---------- interactions ---------- */
+$('sess').addEventListener('input',function(){S.session=parseFloat(this.value);save();renderCompare();});
+$('chips').addEventListener('click',function(e){
+  var v=e.target.dataset&&e.target.dataset.v;
+  if(v){S.session=parseFloat(v);save();renderCompare();}
+});
+$('banner').addEventListener('click',function(e){if(e.target.id==='toSet')show('settings');});
+
+function show(which){
+  $('view-compare').classList.toggle('active',which==='compare');
+  $('view-settings').classList.toggle('active',which==='settings');
+  $('tab-compare').classList.toggle('active',which==='compare');
+  $('tab-settings').classList.toggle('active',which==='settings');
+  if(which==='compare') renderCompare(); else renderSettings();
+  window.scrollTo(0,0);
+}
+$('tab-compare').addEventListener('click',function(){show('compare');});
+$('tab-settings').addEventListener('click',function(){show('settings');});
+
+/* ---------- app-icoon ---------- */
+function makeIcon(){
+  try{
+    var c=document.createElement('canvas');c.width=c.height=180;
+    var x=c.getContext('2d');
+    var gr=x.createLinearGradient(0,0,180,180);gr.addColorStop(0,'#3ad0ff');gr.addColorStop(1,'#0a5cff');
+    x.fillStyle=gr;x.fillRect(0,0,180,180);
+    x.fillStyle='rgba(255,255,255,.18)';x.beginPath();x.arc(150,30,70,0,Math.PI*2);x.fill();
+    x.fillStyle='#fff';x.beginPath();
+    x.moveTo(102,26);x.lineTo(54,100);x.lineTo(86,100);x.lineTo(76,154);x.lineTo(128,72);x.lineTo(94,72);x.closePath();x.fill();
+    $('touchIcon').href=c.toDataURL('image/png');
+  }catch(e){}
+}
+
+makeIcon();
+renderSettings();
+renderCompare();
+})();
+</script>
+</body>
+</html>
